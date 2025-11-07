@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#define NUM_TERRITORIOS 5
+
+typedef struct {
+    char nome[30];
+    int tropas;
+    int dono;
+} Territorio;
+
+Territorio* criarTerritorios() {
+    Territorio *mapa = (Territorio*) calloc(NUM_TERRITORIOS, sizeof(Territorio));
+    if (mapa == NULL) {
+        printf("Erro ao alocar memória!\n");
+        exit(1);
+    }
+
+    strcpy(mapa[0].nome, "Floresta Verde");
+    strcpy(mapa[1].nome, "Montanha Cinzenta");
+    strcpy(mapa[2].nome, "Deserto Solar");
+    strcpy(mapa[3].nome, "Vale Sombrio");
+    strcpy(mapa[4].nome, "Fortaleza Azul");
+
+    for (int i = 0; i < NUM_TERRITORIOS; i++) {
+        mapa[i].tropas = 3 + rand() % 4;
+        mapa[i].dono = (i % 2 == 0) ? 1 : 2;
+    }
+
+    return mapa;
+}
+
+void mostrarMapa(Territorio *mapa) {
+    printf("\n=== ESTADO ATUAL DO MAPA ===\n");
+    printf("%-3s %-20s %-10s %-10s\n", "ID", "Território", "Tropas", "Dono");
+    printf("-----------------------------------------------\n");
+    for (int i = 0; i < NUM_TERRITORIOS; i++) {
+        printf("%-3d %-20s %-10d Jogador %d\n", i + 1, mapa[i].nome, mapa[i].tropas, mapa[i].dono);
+    }
+}
+
+void atacar(Territorio *mapa, int atacante, int defensor) {
+    if (atacante < 1 || atacante > NUM_TERRITORIOS ||
+        defensor < 1 || defensor > NUM_TERRITORIOS) {
+        printf("⚠️  IDs inválidos! Escolha entre 1 e %d.\n", NUM_TERRITORIOS);
+        return;
+    }
+
+    atacante--;
+    defensor--;
+
+    if (mapa[atacante].dono == mapa[defensor].dono) {
+        printf("⚠️  Você não pode atacar seu próprio território!\n");
+        return;
+    }
+
+    if (mapa[atacante].tropas < 1) {
+        printf("⚠️  O território atacante não tem tropas suficientes!\n");
+        return;
+    }
+
+    int dadoAtaque = rand() % 6 + 1;
+    int dadoDefesa = rand() % 6 + 1;
+
+    printf("\n🎯 Ataque de '%s' (Jogador %d) contra '%s' (Jogador %d)\n",
+           mapa[atacante].nome, mapa[atacante].dono,
+           mapa[defensor].nome, mapa[defensor].dono);
+
+    printf("🎲 Dado do ataque: %d\n", dadoAtaque);
+    printf("🛡️  Dado da defesa: %d\n", dadoDefesa);
+
+    if (dadoAtaque >= dadoDefesa) {
+        mapa[defensor].tropas--;
+        printf("💥 Ataque bem-sucedido! O defensor perdeu 1 tropa.\n");
+
+        if (mapa[defensor].tropas <= 0) {
+            printf("🏳️ O território '%s' foi conquistado pelo Jogador %d!\n",
+                   mapa[defensor].nome, mapa[atacante].dono);
+            mapa[defensor].dono = mapa[atacante].dono;
+            mapa[defensor].tropas = 1;
+            mapa[atacante].tropas--;
+        }
+    } else {
+        printf("🧱 O defensor resistiu ao ataque!\n");
+    }
+}
+
+int main() {
+    srand(time(NULL));
+
+    Territorio *mapa = criarTerritorios();
+
+    int opcao, atacante, defensor;
+
+    do {
+        printf("\n=== MENU DE JOGO ===\n");
+        printf("1 - Mostrar mapa\n");
+        printf("2 - Atacar território\n");
+        printf("0 - Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                mostrarMapa(mapa);
+                break;
+
+            case 2:
+                mostrarMapa(mapa);
+                printf("\nEscolha o território atacante (1 a %d): ", NUM_TERRITORIOS);
+                scanf("%d", &atacante);
+                printf("Escolha o território defensor (1 a %d): ", NUM_TERRITORIOS);
+                scanf("%d", &defensor);
+                atacar(mapa, atacante, defensor);
+                break;
+
+            case 0:
+                printf("\nSaindo do jogo... 👋\n");
+                break;
+
+            default:
+                printf("❗ Opção inválida, tente novamente.\n");
+        }
+    } while (opcao != 0);
+
+    free(mapa);
+    return 0;
+}
